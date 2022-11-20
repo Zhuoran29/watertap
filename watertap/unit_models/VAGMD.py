@@ -39,3 +39,80 @@ import idaes.logger as idaeslog
 
 
 _log = idaeslog.getLogger(__name__)
+
+
+@declare_process_block_class("VAGMD")
+class MDData(UnitModelBlockData):
+    """
+    Zero order VAGMD model (vaccum air-gapped membrane distillation)
+    """
+
+    CONFIG = ConfigBlock()
+
+    CONFIG.declare(
+        "dynamic",
+        ConfigValue(
+            domain=In([False]),
+            default=False,
+            description="Dynamic model flag - must be False",
+            doc="""Indicates whether this model will be dynamic or not,
+    **default** = False. The filtration unit does not support dynamic
+    behavior, thus this must be False.""",
+        ),
+    )
+    CONFIG.declare(
+        "has_holdup",
+        ConfigValue(
+            default=False,
+            domain=In([False]),
+            description="Holdup construction flag - must be False",
+            doc="""Indicates whether holdup terms should be constructed or not.
+    **default** - False. The filtration unit does not have defined volume, thus
+    this must be False.""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package",
+        ConfigValue(
+            default=useDefault,
+            domain=is_physical_parameter_block,
+            description="Property package to use for control volume",
+            doc="""Property parameter object used to define property calculations,
+    **default** - useDefault.
+    **Valid values:** {
+    **useDefault** - use default package from parent model or flowsheet,
+    **PhysicalParameterObject** - a PhysicalParameterBlock object.}""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package2",
+        ConfigValue(
+            default=useDefault,
+            domain=is_physical_parameter_block,
+            description="Property package to use for control volume",
+            doc="""Property parameter object used to define property calculations,
+    **default** - useDefault.
+    **Valid values:** {
+    **useDefault** - use default package from parent model or flowsheet,
+    **PhysicalParameterObject** - a PhysicalParameterBlock object.}""",
+        ),
+    )
+    CONFIG.declare(
+        "property_package_args",
+        ConfigBlock(
+            implicit=True,
+            description="Arguments to use for constructing property packages",
+            doc="""A ConfigBlock with arguments to be passed to a property block(s)
+    and used when constructing these,
+    **default** - None.
+    **Valid values:** {
+    see property package for documentation.}""",
+        ),
+    )
+
+    def build(self):
+        super().build()
+
+        self.scaling_factor = Suffix(direction=Suffix.EXPORT)
+
+        units_meta = self.config.property_package.get_metadata().get_derived_units
